@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  
+  --color-background: #f3f2f6;
+  --color-on-background: #1c172e;
+  
+  --color-primary: #1c172e;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #1d182f;
+  --color-on-primary-container: #87809c;
+  --color-inverse-primary: #cbc2e1;
+  
+  --color-action: #00d2c4;
+  
+  --color-secondary: #006a63;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #56faeb;
+  --color-on-secondary-container: #007169;
+  
+  --color-surface: #ffffff;
+  --color-surface-dim: #dad9dd;
+  --color-surface-bright: #faf9fd;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3f7;
+  --color-surface-container: #eeedf1;
+  --color-surface-container-high: #e8e8ec;
+  --color-surface-container-highest: #e3e2e6;
+  
+  --color-on-surface: #1a1c1e;
+  --color-on-surface-variant: #48464d;
+  --color-outline: #79767d;
+  --color-outline-variant: #cac5cd;
+}
+
+/* Custom base elements */
+body {
+  background-color: #f3f2f6;
+  color: #1c172e;
+  font-family: var(--font-sans);
+}
+
+.custom-card-shadow {
+  box-shadow: 0px 4px 20px rgba(28, 23, 46, 0.05);
+}
+
+/* Smooth transition classes */
+.transition-all-default {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cac5cd;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #79767d;
+}
+
+/* Print configuration */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  .print-card-border {
+    border: 1px solid #79767d !important;
+    box-shadow: none !important;
+  }
+  
+  /* Insumo Worksheet specific print styles */
+  .print-insumo-page {
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    page-break-after: avoid;
+    break-inside: avoid;
+  }
+}

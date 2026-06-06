@@ -1,0 +1,6 @@
+{
+  "name": "LogosLab",
+  "description": "Herramienta completa para educadores: Laboratorio de Neurodidáctica, Workspace de PDC Express y Copiloto Empático inteligente.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
