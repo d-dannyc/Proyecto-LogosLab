@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, PdcDocument } from "../types";
 import { EMOTIONAL_CLIMATES } from "../data";
+import { ABP_QUICK_SUBJECTS, findAbpPlan, generateSimulatedChatResponse } from "../abpPlans";
 import { 
   Sparkles, 
   Send, 
@@ -9,11 +10,17 @@ import {
   ArrowRight, 
   Loader2, 
   FileCheck,
-  AlertCircle
+  AlertCircle,
+  ExternalLink,
+  Beaker,
+  Zap,
+  FlaskConical,
+  TestTubeDiagonal
 } from "lucide-react";
 
 interface OrquestadorScreenProps {
   onPdcGenerated: (doc: PdcDocument) => void;
+  onGoToPdc: () => void;
   materia: string;
   setMateria: (m: string) => void;
   tema: string;
@@ -24,6 +31,7 @@ interface OrquestadorScreenProps {
 
 export default function OrquestadorScreen({
   onPdcGenerated,
+  onGoToPdc,
   materia,
   setMateria,
   tema,
@@ -43,6 +51,9 @@ export default function OrquestadorScreen({
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [hasPdcGenerated, setHasPdcGenerated] = useState(false);
+  const [configCollapsed, setConfigCollapsed] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +66,18 @@ export default function OrquestadorScreen({
     "Enlazando con el Proyecto Socioproductivo (PSP)...",
     "Generando plan final en formato Workspace..."
   ];
+
+  // Check if demo mode is active on mount
+  useEffect(() => {
+    fetch("/api/gemini-status")
+      .then(r => r.json())
+      .then(data => {
+        setIsDemoMode(data.demoMode === true);
+      })
+      .catch(() => {
+        setIsDemoMode(true);
+      });
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,6 +95,13 @@ export default function OrquestadorScreen({
     return () => clearInterval(interval);
   }, [loading]);
 
+  // Quick-select a subject chip
+  const handleQuickSelect = (subjectMateria: string, subjectTema: string) => {
+    setMateria(subjectMateria);
+    setTema(subjectTema);
+    setErrorStatus(null);
+  };
+
   const handleStartPlanificacion = async () => {
     if (!materia.trim()) {
       setErrorStatus("Por favor especifica la Materia.");
@@ -83,6 +113,7 @@ export default function OrquestadorScreen({
     }
 
     setErrorStatus(null);
+    setConfigCollapsed(true);
     setLoading(true);
 
     // Add user parameter summary as a message
@@ -117,11 +148,18 @@ export default function OrquestadorScreen({
 
       const generatedPlan: PdcDocument = await response.json();
 
-      // Add assistant response showing success
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: `¡Listo! He formulado un Plan de Desarrollo Curricular (PDC) con neuroenfoque adaptado para el tema de **"${tema}"**. 
+      // Build assistant response: check if we have a matching ABP plan for a richer chat message
+      let assistantContent: string;
+      
+      if (isDemoMode) {
+        const plan = findAbpPlan(materia);
+        if (plan) {
+          assistantContent = generateSimulatedChatResponse(plan, cleanClima);
+        } else {
+          assistantContent = `He cargado un PDC de demostración para **"${tema}"**.\n\n⚠️ **Modo Demo:** Actualmente tengo planificaciones ABP completas para:\n\n📐 **Matemática** — Geometría Aplicada\n⚡ **Física** — Calentador Solar\n🧪 **Química** — Jabón Artesanal\n\nSelecciona una de estas materias usando los chips rápidos para ver la planificación ABP completa.\n\nHe cargado el borrador en tu Workspace. Haz clic en **Ir a PDC Express** para verlo. 📄`;
+        }
+      } else {
+        assistantContent = `¡Listo! He formulado un Plan de Desarrollo Curricular (PDC) con neuroenfoque adaptado para el tema de **"${tema}"**. 
 
 Unidad Académica sugerida: **${generatedPlan.institucion}**
 PSP formulado: ${generatedPlan.psp}
@@ -131,12 +169,19 @@ PSP formulado: ${generatedPlan.psp}
 
 *Nota Neurofisiológica:* ${generatedPlan.explicacionNeuro || "Adaptada para incentivar la receptividad."}
 
-He cargado este borrador en tu sistema. Haz clic abajo en **Ir a PDC Express** para verlo completo, editarlo y exportarlo en formato PDF de Ley 070.`,
+He cargado este borrador en tu sistema. Haz clic abajo en **Ir a PDC Express** para verlo completo, editarlo y exportarlo en formato PDF de Ley 070.`;
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: assistantContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
       onPdcGenerated(generatedPlan);
+      setHasPdcGenerated(true);
       setDetalles("");
     } catch (err: any) {
       console.error(err);
@@ -210,9 +255,19 @@ He cargado este borrador en tu sistema. Haz clic abajo en **Ir a PDC Express** p
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] animate-fade-in max-w-5xl mx-auto">
       {/* Top Header */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-primary font-sans">Agente Orquestador</h2>
-        <p className="text-sm text-on-surface-variant font-medium">Asistencia empática para estructurar tu próximo plan didáctico.</p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-primary font-sans">Agente Orquestador</h2>
+          <p className="text-sm text-on-surface-variant font-medium">Asistencia empática para estructurar tu próximo plan didáctico.</p>
+        </div>
+
+        {/* Demo Mode Badge */}
+        {isDemoMode && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-300 text-amber-800 px-3 py-1.5 rounded-xl text-xs font-bold animate-pulse">
+            <Zap size={14} />
+            <span>MODO DEMO — ABP</span>
+          </div>
+        )}
       </div>
 
       {/* Main Chat Box Container */}
@@ -254,7 +309,7 @@ He cargado este borrador en tu sistema. Haz clic abajo en **Ir a PDC Express** p
                     {msg.content.split("\n").map((line, lIdx) => {
                       // basic replaces for ** bolding
                       let processed = line;
-                      const parts = [];
+                      const parts: (string | React.ReactElement)[] = [];
                       const boldRegex = /\*\*(.*?)\*\*/g;
                       let lastIndex = 0;
                       let match;
@@ -270,73 +325,136 @@ He cargado este borrador en tu sistema. Haz clic abajo en **Ir a PDC Express** p
                         parts.push(processed.substring(lastIndex));
                       }
 
+                      // Handle italic with *text*
+                      const finalParts = parts.length > 0 ? parts : [line];
+
                       return (
                         <p key={lIdx} className={line ? "mb-2" : "mb-4"}>
-                          {parts.length > 0 ? parts : line}
+                          {finalParts}
                         </p>
                       );
                     })}
 
                     {/* Show PDC config inputs inside the initial chat message context */}
                     {msg.id === "welcome" && (
-                      <div className="mt-4 border border-outline-variant/30 rounded-2xl p-4 bg-surface custom-card-shadow space-y-4 no-print text-[13px] text-primary">
-                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                          📋 Configuración Inicial del Plan
-                        </p>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="font-semibold block mb-1">Materia / Área Académica</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="Ej. Matemáticas, Literatura, Biología..."
-                              value={materia}
-                              onChange={(e) => setMateria(e.target.value)}
-                              className="w-full text-xs px-3 py-2 border border-outline-variant bg-surface-container-low rounded-xl focus:outline-none focus:border-action transition-colors text-primary"
-                            />
+                      <>
+                        {/* Collapsed state: show summary chip + toggle to re-expand */}
+                        {configCollapsed ? (
+                          <div className="mt-4 border border-outline-variant/20 rounded-2xl p-3 bg-surface-container-low/50 no-print text-[13px] text-primary">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                                <FileCheck size={14} className="text-green-600" />
+                                <span className="font-semibold">Configurado:</span>
+                                <span className="bg-primary-container text-primary px-2 py-0.5 rounded-lg text-[11px] font-bold">{materia}</span>
+                                <span className="text-on-surface-variant">•</span>
+                                <span className="text-[11px] truncate max-w-[200px]">{tema}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setConfigCollapsed(false)}
+                                className="text-xs text-action font-semibold hover:underline cursor-pointer flex items-center gap-1"
+                              >
+                                <span>Reconfigurar</span>
+                                <ArrowRight size={12} />
+                              </button>
+                            </div>
                           </div>
+                        ) : (
+                          <div className="mt-4 border border-outline-variant/30 rounded-2xl p-4 bg-surface custom-card-shadow space-y-4 no-print text-[13px] text-primary">
+                            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                              📋 Configuración Inicial del Plan
+                            </p>
 
-                          <div>
-                            <label className="font-semibold block mb-1">Tema Específico de Clase</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="Ej. Ecuaciones, Análisis Lírico, Mitosis..."
-                              value={tema}
-                              onChange={(e) => setTema(e.target.value)}
-                              className="w-full text-xs px-3 py-2 border border-outline-variant bg-surface-container-low rounded-xl focus:outline-none focus:border-action transition-colors text-primary"
-                            />
-                          </div>
-                        </div>
+                            {/* ABP Quick-Select Chips */}
+                            {isDemoMode && (
+                              <div className="mb-3">
+                                <label className="font-semibold block mb-2 text-xs text-on-surface-variant uppercase tracking-wider">
+                                  ⚡ Selección Rápida — Proyectos ABP Disponibles
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                  {ABP_QUICK_SUBJECTS.map((subject) => {
+                                    const isSelected = materia === subject.materia;
+                                    return (
+                                      <button
+                                        key={subject.materia}
+                                        type="button"
+                                        onClick={() => handleQuickSelect(subject.materia, subject.tema)}
+                                        className={`
+                                          flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs border-2 transition-all cursor-pointer font-bold
+                                          ${isSelected 
+                                            ? subject.colorActive
+                                            : subject.color}
+                                        `}
+                                      >
+                                        <span className="text-base">{subject.icon}</span>
+                                        <div className="text-left">
+                                          <div className="font-bold">{subject.materia}</div>
+                                          <div className={`text-[10px] font-medium ${isSelected ? 'opacity-80' : 'opacity-60'}`}>
+                                            {subject.tema.length > 40 ? subject.tema.substring(0, 40) + '...' : subject.tema}
+                                          </div>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="font-semibold block mb-1">Materia / Área Académica</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Ej. Matemáticas, Literatura, Biología..."
+                                  value={materia}
+                                  onChange={(e) => setMateria(e.target.value)}
+                                  className="w-full text-xs px-3 py-2 border border-outline-variant bg-surface-container-low rounded-xl focus:outline-none focus:border-action transition-colors text-primary"
+                                />
+                              </div>
 
-                        {/* Emotional climate selector */}
-                        <div>
-                          <label className="font-semibold block mb-1">Clima Emocional Deseado en el Aula</label>
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {EMOTIONAL_CLIMATES.map((mood) => {
-                              const isSelected = clima === mood.label;
-                              return (
-                                <button
-                                  key={mood.label}
-                                  type="button"
-                                  onClick={() => setClima(mood.label)}
-                                  title={mood.description}
-                                  className={`
-                                    flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all cursor-pointer font-medium
-                                    ${isSelected 
-                                      ? "bg-primary-container text-primary border-action font-semibold scale-105 shadow-sm" 
-                                      : "border-outline-variant text-on-surface-variant bg-surface hover:bg-surface-container-low"}
-                                  `}
-                                >
-                                  <span>{mood.icon}</span>
-                                  <span>{mood.label}</span>
-                                </button>
-                              );
-                            })}
+                              <div>
+                                <label className="font-semibold block mb-1">Tema Específico de Clase</label>
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Ej. Ecuaciones, Análisis Lírico, Mitosis..."
+                                  value={tema}
+                                  onChange={(e) => setTema(e.target.value)}
+                                  className="w-full text-xs px-3 py-2 border border-outline-variant bg-surface-container-low rounded-xl focus:outline-none focus:border-action transition-colors text-primary"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Emotional climate selector */}
+                            <div>
+                              <label className="font-semibold block mb-1">Clima Emocional Deseado en el Aula</label>
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                {EMOTIONAL_CLIMATES.map((mood) => {
+                                  const isSelected = clima === mood.label;
+                                  return (
+                                    <button
+                                      key={mood.label}
+                                      type="button"
+                                      onClick={() => setClima(mood.label)}
+                                      title={mood.description}
+                                      className={`
+                                        flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all cursor-pointer font-medium
+                                        ${isSelected 
+                                          ? "bg-primary-container text-primary border-action font-semibold scale-105 shadow-sm" 
+                                          : "border-outline-variant text-on-surface-variant bg-surface hover:bg-surface-container-low"}
+                                      `}
+                                    >
+                                      <span>{mood.icon}</span>
+                                      <span>{mood.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        )}
+                      </>  
                     )}
                   </div>
                   
@@ -359,6 +477,20 @@ He cargado este borrador en tu sistema. Haz clic abajo en **Ir a PDC Express** p
                 <Loader2 size={18} className="animate-spin text-action" />
                 <span>{loadingSteps[loadingStep]}</span>
               </div>
+            </div>
+          )}
+
+          {/* Go to PDC Express button — appears after plan generation */}
+          {hasPdcGenerated && !loading && (
+            <div className="flex justify-center my-4">
+              <button
+                onClick={onGoToPdc}
+                className="bg-primary text-white font-bold text-sm py-3 px-6 rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all custom-card-shadow flex items-center gap-2 group cursor-pointer"
+              >
+                <ExternalLink size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                <span>Ver en PDC Express</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
           )}
 
@@ -404,7 +536,7 @@ He cargado este borrador en tu sistema. Haz clic abajo en **Ir a PDC Express** p
               className="bg-action text-white font-bold text-sm py-3 px-8 rounded-xl hover:bg-[#00bdae] active:scale-[0.98] transition-all custom-card-shadow flex items-center gap-2 group cursor-pointer disabled:opacity-50"
             >
               <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />
-              <span>Iniciar Planificación con IA</span>
+              <span>{isDemoMode ? "Generar Planificación ABP" : "Iniciar Planificación con IA"}</span>
             </button>
           </div>
         </div>

@@ -1,13 +1,14 @@
 import React from "react";
 import { AppTab } from "../types";
-import { 
-  Home, 
-  BookOpen, 
-  Landmark, 
-  Brain, 
-  Settings, 
-  HelpCircle, 
-  LogOut, 
+import logosLabLogo from "../assets/LogusLab.jpeg";
+import {
+  Home,
+  BookOpen,
+  Landmark,
+  Brain,
+  Settings,
+  HelpCircle,
+  LogOut,
   Sparkles,
   Menu,
   X
@@ -35,13 +36,11 @@ export default function Sidebar({ activeTab, setActiveTab, onGeneratePlanClick }
     <>
       {/* Mobile Header */}
       <header className="md:hidden flex justify-between items-center w-full px-4 h-16 bg-surface border-b border-outline-variant/30 sticky top-0 z-40 custom-card-shadow no-print">
-        <div className="flex items-center gap-2" onClick={() => setActiveTab("dashboard")}>
-          <div className="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-bold font-sans">
-            L
-          </div>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab("dashboard")}>
+          <img src={logosLabLogo} alt="LogosLab" className="w-9 h-9 rounded-lg object-cover custom-card-shadow" />
           <h1 className="font-bold text-lg text-primary tracking-tight">LogosLab</h1>
         </div>
-        <button 
+        <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="text-on-surface-variant p-2 rounded-lg hover:bg-surface-container transition-colors"
           id="mobile-menu-btn"
@@ -52,7 +51,7 @@ export default function Sidebar({ activeTab, setActiveTab, onGeneratePlanClick }
 
       {/* Sidebar background overlay for mobile */}
       {mobileOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 bg-black/45 z-40 transition-opacity no-print"
           onClick={() => setMobileOpen(false)}
         />
@@ -65,9 +64,7 @@ export default function Sidebar({ activeTab, setActiveTab, onGeneratePlanClick }
       `}>
         {/* Brand Header */}
         <div className="p-6 border-b border-outline-variant/20 flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-primary text-on-primary flex items-center justify-center font-black text-xl font-sans custom-card-shadow">
-            L
-          </div>
+          <img src={logosLabLogo} alt="LogosLab" className="w-11 h-11 rounded-xl object-cover custom-card-shadow" />
           <div>
             <h1 className="font-bold text-lg text-primary tracking-tight leading-tight">LogosLab</h1>
             <p className="text-xs text-on-surface-variant font-medium">Asistente Pedagógico</p>
@@ -76,7 +73,7 @@ export default function Sidebar({ activeTab, setActiveTab, onGeneratePlanClick }
 
         {/* Generate Plan CTA Button */}
         <div className="p-4">
-          <button 
+          <button
             id="sidebar-generate-plan"
             onClick={() => {
               setMobileOpen(false);
@@ -104,8 +101,8 @@ export default function Sidebar({ activeTab, setActiveTab, onGeneratePlanClick }
                 }}
                 className={`
                   w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:translate-x-1 cursor-pointer
-                  ${isActive 
-                    ? "bg-primary text-white font-bold shadow-md" 
+                  ${isActive
+                    ? "bg-primary text-white font-bold shadow-md"
                     : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary"}
                 `}
               >

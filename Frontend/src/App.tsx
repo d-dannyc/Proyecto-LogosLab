@@ -80,9 +80,9 @@ export default function App() {
             setClima={setClima}
             onPdcGenerated={(generatedDoc) => {
               setPdcDocument(generatedDoc);
-              // Shift immediately to the Curriculum workspace to see the generated document!
-              setActiveTab("pdc");
+              // PDC saved silently — user stays on chat to see the full response
             }}
+            onGoToPdc={() => setActiveTab("pdc")}
           />
         );
       case "pdc":
